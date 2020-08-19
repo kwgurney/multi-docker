@@ -1,0 +1,23 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t kwgurney/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true kwgurney/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t kwgurney/multi-client ./client
+  - docker build -t kwgurney/multi-nginx ./nginx
+  - docker build -t kwgurney/multi-server ./server
+  - docker build -t kwgurney/multi-worker ./worker
+  # Login to docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Push these images to dockerhub
+  - docker push kwgurney/multi-client
+  - docker push kwgurney/multi-nginx
+  - docker push kwgurney/multi-server
+  - docker push kwgurney/multi-worker
